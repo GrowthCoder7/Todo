@@ -1,44 +1,53 @@
 const express = require("express");
+const { createTask, updateTask } = require("./type");
+const cors = require("cors");
+const todos = require("./user");
 const app = express();
-const { createTodo, completeTodo } = require("./types");
-const todo = require("./users");
 
 app.use(express.json());
+app.use(cors());
 
-app.post("/todos", async (req, res) => {
+app.post("/todo", async (req, res) => {
   const data = req.body;
-  const parsedData = createTodo.safeParse(data);
+  const parsedData = createTask.safeParse(data);
+
   if (!parsedData.success) {
-    res.status(401).send({ msg: "Wrong inputs!" });
+    res.status(403).json({ msg: "Wrong inputs!" });
+    return;
   }
-  await todo.create({
-    title: parsedData.title,
-    description: parsedData.description,
+
+  const { title, description } = parsedData.data; // Access parsed data correctly
+
+  await todos.create({
+    title,
+    description,
   });
-  res.json({ msg: "Todo created!" });
+  res.json({ msg: "Todo Created!" });
 });
 
 app.get("/todos", async (req, res) => {
-  const task = await todo.find({});
-  res.json({ task });
+  const todo = await todos.find({});
+  res.json({ todo });
 });
 
 app.put("/completed", async (req, res) => {
   const data = req.body;
-  const parsedData = completeTodo.safeParse(data);
-  if (!parsedData.success) {
-    res.status(401).send({ msg: "Wrong inputs!" });
-  }
-  await todo.update(
-    {
-      _id: req.body.id,
-    },
-    {
-      completed: true,
-    }
-  );
+  const parsedData = updateTask.safeParse(data);
 
-  res.json({ msg: "Task marked as complete" });
+  if (!parsedData.success) {
+    res.status(403).json({ msg: "Wrong inputs!" });
+    return;
+  }
+
+  const { id } = parsedData.data; // Access parsed data correctly
+
+  await todos.update(
+    {
+      _id: id,
+    },
+    { completed: true }
+  );
+  res.json({ msg: "Marked as complete!" });
 });
 
 app.listen(3000, () => {
